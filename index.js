@@ -30,6 +30,7 @@ async function run() {
 
     const sportsCollection = client.db("summerCampDb").collection('sports');
     const classesCollection = client.db("summerCampDb").collection('classes');
+    const selectClassCollection = client.db("summerCampDb").collection('selectedClasses');
    
 
     app.get('/classes', async(req,res)=>{
@@ -37,6 +38,11 @@ async function run() {
         res.send(result);
     })
 
+    app.post('/selectedclasses',async(req,res)=>{
+        const classSelect = req.body;
+        const result = await selectClassCollection.insertOne(classSelect);
+        res.send(result);
+    })
 
 
 
