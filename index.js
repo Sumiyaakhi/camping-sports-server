@@ -29,10 +29,11 @@ async function run() {
     await client.connect();
 
     const sportsCollection = client.db("summerCampDb").collection('sports');
+    const classesCollection = client.db("summerCampDb").collection('classes');
    
 
-    app.get('/sports', async(req,res)=>{
-        const result = await sportsCollection.find().toArray();
+    app.get('/classes', async(req,res)=>{
+        const result = await classesCollection.find().toArray();
         res.send(result);
     })
 
