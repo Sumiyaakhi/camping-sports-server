@@ -44,7 +44,10 @@ async function run() {
         res.send(result);
     })
 
-
+app.get('/selectedclasses',async(req, res)=>{
+    const result = await selectClassCollection.find().toArray();
+    res.send(result);
+})
 
 
     // Send a ping to confirm a successful connection
