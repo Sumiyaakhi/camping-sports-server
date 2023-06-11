@@ -11,7 +11,7 @@ app.use(express.json());
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.rwhgbgz.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -31,6 +31,7 @@ async function run() {
     const sportsCollection = client.db("summerCampDb").collection('sports');
     const classesCollection = client.db("summerCampDb").collection('classes');
     const selectClassCollection = client.db("summerCampDb").collection('selectedClasses');
+    const usersCollection = client.db("summerCampDb").collection('users');
    
 
     app.get('/classes', async(req,res)=>{
@@ -48,7 +49,57 @@ app.get('/selectedclasses',async(req, res)=>{
     const result = await selectClassCollection.find().toArray();
     res.send(result);
 })
+app.delete('/selectedclasses/:id', async(req, res)=>{
+    const id = req.params.id;
+    const query = {_id: new ObjectId(id)};
+    const result = await selectClassCollection.deleteOne(query);
+    res.send(result);
+})
 
+// add all  user from  register
+app.post('/users',async(req,res)=>{
+    const user = req.body;
+    console.log(user);
+    const query = {email: user.email};
+    const existingUser = await usersCollection.findOne(query);
+    console.log(existingUser);
+    if(existingUser){
+        return res.send({message: 'user is already exists'});
+
+    }
+    const result = await usersCollection.insertOne(user);
+    res.send(result);
+})
+
+app.get('/users', async(req,res)=>{
+    const result = await usersCollection.find().toArray();
+    res.send(result);
+})
+
+app.patch('/users/admin/:id',async(req,res)=>{
+    const id = req.params.id;
+    console.log(id);
+    const query = {_id: new ObjectId(id)}
+    const updateRoll = {
+        $set: {
+            role: "Admin"
+        }
+    }
+    const result = await usersCollection.updateOne(query,updateRoll)
+    res.send(result);
+})
+app.patch('/users/instructor/:id',async(req,res)=>{
+    const id = req.params.id;
+    console.log(id);
+    const query = {_id: new ObjectId(id)}
+    const updateRoll = {
+        $set: {
+            role: "Instructor"
+        }
+    }
+    const result = await usersCollection.updateOne(query,updateRoll)
+    res.send(result);
+})
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
