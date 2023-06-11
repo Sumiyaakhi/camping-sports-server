@@ -120,7 +120,16 @@ app.post('/users',async(req,res)=>{
     res.send(result);
 })
 
-
+app.get('/users/admin/:email', verifyJWT, async(req,res)=>{
+    const email = req.params.email;
+    if(req.decoded.email !== email){
+      res.send({admin: false})
+    }
+    const query = { email : email}
+    const user = await usersCollection.findOne(query);
+    const result = {admin: user?.role === 'Admin'}
+    res.send(result);
+  })
 
 app.get('/users', async(req,res)=>{
     const result = await usersCollection.find().toArray();
