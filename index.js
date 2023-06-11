@@ -49,7 +49,7 @@ async function run() {
 
     const sportsCollection = client.db("summerCampDb").collection('sports');
     const classesCollection = client.db("summerCampDb").collection('classes');
-    const selectClassCollection = client.db("summerCampDb").collection('selectedClasses');
+    const selectClassCollection = client.db("summerCampDb").collection('selectedclasses');
     const usersCollection = client.db("summerCampDb").collection('users');
    
 
@@ -65,14 +65,37 @@ async function run() {
 
     })
 
-    app.post('/selectedclasses',async(req,res)=>{
+    // app.post('/selectedclasses',async(req,res)=>{
+    //     const classSelect = req.body;
+    //     const result = await selectClassCollection.insertOne(classSelect);
+    //     res.send(result);
+    // })
+
+    app.post('/selectedclasses', async(req,res)=>{
         const classSelect = req.body;
+        const query = {name: classSelect.name}
+        console.log(query);
+        const existingClass = await selectClassCollection.findOne(query);
+        console.log(existingClass);
+        if(existingClass){
+            return res.send({message: 'class is already exists'});
+        }
         const result = await selectClassCollection.insertOne(classSelect);
         res.send(result);
     })
 
-app.get('/selectedclasses',async(req, res)=>{
-    const result = await selectClassCollection.find().toArray();
+app.get('/selectedclasses',verifyJWT,async(req, res)=>{
+    const email = req.query.email;
+    console.log(email);
+    if(!email){
+        res.send([])
+    }
+    const decodedEmail = req.decoded.email;
+    if(email!== decodedEmail){
+        return res.status(403).send({error: true, message: 'forbidden access'})
+    }
+    const query = { email : email}
+    const result = await selectClassCollection.find(query).toArray();
     res.send(result);
 })
 app.delete('/selectedclasses/:id', async(req, res)=>{
@@ -96,6 +119,8 @@ app.post('/users',async(req,res)=>{
     const result = await usersCollection.insertOne(user);
     res.send(result);
 })
+
+
 
 app.get('/users', async(req,res)=>{
     const result = await usersCollection.find().toArray();
