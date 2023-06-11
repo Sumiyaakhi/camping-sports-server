@@ -11,6 +11,24 @@ app.use(cors());
 app.use(express.json());
 
 
+// middleware for jwt
+const verifyJWT =(req,res,next) =>{
+    const authorization  = req.headers.authorization;
+    if(!authorization){
+        return res.status(401).send({error: true, message: 'unauthorized access'})
+    }
+
+    const token = authorization.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err,decoded)=>{
+        if(err){
+            return res.status(401).send({error: true, message: 'unauthorized access'})
+        }
+
+        req.decoded= decoded;
+        next();
+    })
+}
+
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.rwhgbgz.mongodb.net/?retryWrites=true&w=majority`;
@@ -36,10 +54,10 @@ async function run() {
    
 
 // jwt create
-    app.get('/jwt',(req,res)=>{
+    app.post('/jwt',(req,res)=>{
         const user = req.body;
         const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1hr'})
-        res.send(token);
+        res.send({token});
     })
     app.get('/classes', async(req,res)=>{
         const result = await classesCollection.find().toArray();
