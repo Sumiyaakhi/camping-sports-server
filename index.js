@@ -59,6 +59,17 @@ async function run() {
         const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1hr'})
         res.send({token});
     })
+// middleware for admin verify
+const verifyAdmin =async(req, res, next) =>{
+    const email =  req.decoded.email;
+    const query = { email: email};
+    const user = await usersCollection.findOne(query);
+    if(user?.role !== 'Admin'){
+        return res.status(403).send({error: true, message: 'forbidden access'})
+    }
+}
+
+
     app.get('/classes', async(req,res)=>{
         const result = await classesCollection.find().toArray();
         res.send(result);
@@ -84,7 +95,7 @@ async function run() {
         res.send(result);
     })
 
-app.get('/selectedclasses',verifyJWT,async(req, res)=>{
+app.get('/selectedclasses',verifyJWT,verifyAdmin,async(req, res)=>{
     const email = req.query.email;
     console.log(email);
     if(!email){
@@ -120,6 +131,7 @@ app.post('/users',async(req,res)=>{
     res.send(result);
 })
 
+// check the user is admin
 app.get('/users/admin/:email', verifyJWT, async(req,res)=>{
     const email = req.params.email;
     if(req.decoded.email !== email){
@@ -128,6 +140,16 @@ app.get('/users/admin/:email', verifyJWT, async(req,res)=>{
     const query = { email : email}
     const user = await usersCollection.findOne(query);
     const result = {admin: user?.role === 'Admin'}
+    res.send(result);
+  })
+app.get('/users/instructor/:email', verifyJWT, async(req,res)=>{
+    const email = req.params.email;
+    if(req.decoded.email !== email){
+      res.send({admin: false})
+    }
+    const query = { email : email}
+    const user = await usersCollection.findOne(query);
+    const result = {admin: user?.role === 'Instructor'}
     res.send(result);
   })
 
