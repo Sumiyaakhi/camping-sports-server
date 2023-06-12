@@ -51,6 +51,7 @@ async function run() {
     const classesCollection = client.db("summerCampDb").collection('classes');
     const selectClassCollection = client.db("summerCampDb").collection('selectedclasses');
     const usersCollection = client.db("summerCampDb").collection('users');
+    const instructorsCollection = client.db("summerCampDb").collection('instructorInfo');
    
 
 // jwt create
@@ -145,11 +146,11 @@ app.get('/users/admin/:email', verifyJWT, async(req,res)=>{
 app.get('/users/instructor/:email', verifyJWT, async(req,res)=>{
     const email = req.params.email;
     if(req.decoded.email !== email){
-      res.send({admin: false})
+      res.send({instructor: false})
     }
     const query = { email : email}
     const user = await usersCollection.findOne(query);
-    const result = {admin: user?.role === 'Instructor'}
+    const result = {instructor: user?.role === 'Instructor'}
     res.send(result);
   })
 
@@ -180,6 +181,12 @@ app.patch('/users/instructor/:id',async(req,res)=>{
         }
     }
     const result = await usersCollection.updateOne(query,updateRoll)
+    res.send(result);
+})
+
+// instructor info get
+app.get('/instructors', async(req,res)=>{
+    const result = await instructorsCollection.find().toArray();
     res.send(result);
 })
 
