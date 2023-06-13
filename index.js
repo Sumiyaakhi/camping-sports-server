@@ -277,11 +277,16 @@ app.post('/create-payment-intent',verifyJWT,async(req, res)=>{
     const payment = req.body;
     const insertResult = await paymentCollection.insertOne(payment);
 
-    const query = {_id: {$in: payment.cartItems.map(id => new ObjectId(id))}}
+    const query = {_id: {$in: payment._id = new ObjectId(id)}}
     const deleteResult = await selectClassCollection.deleteOne(query)
     res.send({ insertResult,deleteResult})
   })
 
+  app.get('/payment',async(req,res)=>{
+    const result = await paymentCollection.find().toArray();
+    res.send(result);
+    
+  })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
