@@ -55,6 +55,7 @@ async function run() {
     const instructorsCollection = client.db("summerCampDb").collection('instructorInfo');
     const addClassCollection = client.db("summerCampDb").collection('addClass');
     const paymentCollection = client.db("summerCampDb").collection("payment");
+    const popularClassCollection = client.db("summerCampDb").collection("popularClasses");
 
 // jwt create
     app.post('/jwt',(req,res)=>{
@@ -183,6 +184,10 @@ app.get('/users/instructor/:email', verifyJWT, async(req,res)=>{
 
 app.get('/users', async(req,res)=>{
     const result = await usersCollection.find().toArray();
+    res.send(result);
+})
+app.get('/popularClass', async(req,res)=>{
+    const result = await popularClassCollection.find().toArray();
     res.send(result);
 })
 
