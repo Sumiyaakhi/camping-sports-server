@@ -3,6 +3,7 @@ const app = express();
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config()
+const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY)
 const port = process.env.PORT || 5000; 
 
 
@@ -53,7 +54,7 @@ async function run() {
     const usersCollection = client.db("summerCampDb").collection('users');
     const instructorsCollection = client.db("summerCampDb").collection('instructorInfo');
     const addClassCollection = client.db("summerCampDb").collection('addClass');
-   
+    const paymentCollection = client.db("summerCampDb").collection("payment");
 
 // jwt create
     app.post('/jwt',(req,res)=>{
@@ -93,15 +94,16 @@ const verifyInstructor =async(req, res, next) =>{
     // })
 
     app.post('/selectedclasses', async(req,res)=>{
-        const classSelect = req.body;
-        const query = {name: classSelect.name}
-        console.log(query);
-        const existingClass = await selectClassCollection.findOne(query);
-        console.log(existingClass);
-        if(existingClass){
-            return res.send({message: 'class is already exists'});
+        const {name,image,price, instructor,email} = req.body;
+        const document = {
+            _id: new ObjectId(),
+            name,
+            image, 
+            price,
+            instructor,
+            email
         }
-        const result = await selectClassCollection.insertOne(classSelect);
+        const result = await selectClassCollection.insertOne(document);
         res.send(result);
     })
 
@@ -228,7 +230,7 @@ app.get('/admin/pendingClasses',async(req,res)=>{
     const result = await addClassCollection.find().toArray();
     res.send(result);
 })
-app.patch('/admin/pendingClasses/:id',async(req,res)=>{
+app.patch('/admin/approved/:id',async(req,res)=>{
     const id = req.params.id;
     const query = {_id: new ObjectId(id)}
     const updateStatus = {
@@ -239,7 +241,7 @@ app.patch('/admin/pendingClasses/:id',async(req,res)=>{
     const result = await addClassCollection.updateOne(query,updateStatus);
     res.send(result);
 })
-app.patch('/admin/pendingClasses/:id',async(req,res)=>{
+app.patch('/admin/denied/:id',async(req,res)=>{
     const id = req.params.id;
     const query = {_id: new ObjectId(id)}
     const updateStatus = {
@@ -250,6 +252,31 @@ app.patch('/admin/pendingClasses/:id',async(req,res)=>{
     const result = await addClassCollection.updateOne(query,updateStatus);
     res.send(result);
 })
+
+// create payment intent
+app.post('/create-payment-intent',verifyJWT,async(req, res)=>{
+    const {price} = req.body;
+    const amount = price*100;
+    console.log(price, amount);
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount,
+      currency:'usd',
+      payment_method_types: ['card']
+    });
+    res.send({
+      clientSecret: paymentIntent.client_secret
+    })
+  })
+
+  app.post('/payments',verifyJWT, async(req, res)=>{
+    const payment = req.body;
+    const insertResult = await paymentCollection.insertOne(payment);
+
+    const query = {_id: {$in: payment.cartItems.map(id => new ObjectId(id))}}
+    const deleteResult = await selectClassCollection.deleteOne(query)
+    res.send({ insertResult,deleteResult})
+  })
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
