@@ -52,6 +52,7 @@ async function run() {
     const selectClassCollection = client.db("summerCampDb").collection('selectedclasses');
     const usersCollection = client.db("summerCampDb").collection('users');
     const instructorsCollection = client.db("summerCampDb").collection('instructorInfo');
+    const addClassCollection = client.db("summerCampDb").collection('addClass');
    
 
 // jwt create
@@ -66,6 +67,14 @@ const verifyAdmin =async(req, res, next) =>{
     const query = { email: email};
     const user = await usersCollection.findOne(query);
     if(user?.role !== 'Admin'){
+        return res.status(403).send({error: true, message: 'forbidden access'})
+    }
+}
+const verifyInstructor =async(req, res, next) =>{
+    const email =  req.decoded.email;
+    const query = { email: email};
+    const user = await usersCollection.findOne(query);
+    if(user?.role !== 'Instructor'){
         return res.status(403).send({error: true, message: 'forbidden access'})
     }
 }
@@ -96,7 +105,7 @@ const verifyAdmin =async(req, res, next) =>{
         res.send(result);
     })
 
-app.get('/selectedclasses',verifyJWT,verifyAdmin,async(req, res)=>{
+app.get('/selectedclasses',verifyJWT,async(req, res)=>{
     const email = req.query.email;
     console.log(email);
     if(!email){
@@ -117,13 +126,29 @@ app.delete('/selectedclasses/:id', async(req, res)=>{
     res.send(result);
 })
 
+// classes seat decrease 
+// app.patch('/classes/:id',  async(req,res)=>{
+//     const classInfo = req.body;
+//     const id = req.params.id;
+// console.log(classInfo);
+//     const query = {_id: new ObjectId(id)};
+//     const updateClasses = {
+//         $set: {
+//             availableSeats: classInfo -1
+//         }
+//     }
+//     const result = await classesCollection.updateOne(query, updateClasses);
+//     res.send(result);
+// })
+
+ 
 // add all  user from  register
 app.post('/users',async(req,res)=>{
     const user = req.body;
-    console.log(user);
+    // console.log(user);
     const query = {email: user.email};
     const existingUser = await usersCollection.findOne(query);
-    console.log(existingUser);
+    // console.log(existingUser);
     if(existingUser){
         return res.send({message: 'user is already exists'});
 
@@ -159,9 +184,10 @@ app.get('/users', async(req,res)=>{
     res.send(result);
 })
 
+
 app.patch('/users/admin/:id',async(req,res)=>{
     const id = req.params.id;
-    console.log(id);
+    // console.log(id);
     const query = {_id: new ObjectId(id)}
     const updateRoll = {
         $set: {
@@ -173,7 +199,7 @@ app.patch('/users/admin/:id',async(req,res)=>{
 })
 app.patch('/users/instructor/:id',async(req,res)=>{
     const id = req.params.id;
-    console.log(id);
+    // console.log(id);
     const query = {_id: new ObjectId(id)}
     const updateRoll = {
         $set: {
@@ -190,6 +216,41 @@ app.get('/instructors', async(req,res)=>{
     res.send(result);
 })
 
+// add a class
+app.post('/instructor/addClass',async(req,res)=>{
+    const addClass = req.body;
+    const result = await addClassCollection.insertOne(addClass);
+    res.send(result);
+})
+
+// get add a class data for admin
+app.get('/admin/pendingClasses',async(req,res)=>{
+    const result = await addClassCollection.find().toArray();
+    res.send(result);
+})
+app.patch('/admin/pendingClasses/:id',async(req,res)=>{
+    const id = req.params.id;
+    const query = {_id: new ObjectId(id)}
+    const updateStatus = {
+        $set:{
+            status: "approved"
+        }
+    }
+    const result = await addClassCollection.updateOne(query,updateStatus);
+    res.send(result);
+})
+app.patch('/admin/pendingClasses/:id',async(req,res)=>{
+    const id = req.params.id;
+    const query = {_id: new ObjectId(id)}
+    const updateStatus = {
+        $set:{
+            status: "deny"
+        }
+    }
+    const result = await addClassCollection.updateOne(query,updateStatus);
+    res.send(result);
+})
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
@@ -198,6 +259,8 @@ app.get('/instructors', async(req,res)=>{
     // await client.close();
   }
 }
+
+
 run().catch(console.dir);
 
 
