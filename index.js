@@ -129,20 +129,6 @@ app.delete('/selectedclasses/:id', async(req, res)=>{
     res.send(result);
 })
 
-// classes seat decrease 
-// app.patch('/classes/:id',  async(req,res)=>{
-//     const classInfo = req.body;
-//     const id = req.params.id;
-// console.log(classInfo);
-//     const query = {_id: new ObjectId(id)};
-//     const updateClasses = {
-//         $set: {
-//             availableSeats: classInfo -1
-//         }
-//     }
-//     const result = await classesCollection.updateOne(query, updateClasses);
-//     res.send(result);
-// })
 
  
 // add all  user from  register
@@ -191,6 +177,21 @@ app.get('/popularClass', async(req,res)=>{
     res.send(result);
 })
 
+app.get('/instructor/addClass/', async(req,res)=>{
+    const email = req.query.email;
+    console.log(email);
+    if(!email){
+        res.send([])
+    }
+    // const decodedEmail = req.decoded.email;
+    // if(email !== decodedEmail){
+    //     return res.status(403).send({error: true, message: 'forbidden access'})
+    // }
+    const query = {email: email};
+    const addClasses = await addClassCollection.find(query).toArray();
+    res.send(addClasses); 
+})
+
 
 app.patch('/users/admin/:id',async(req,res)=>{
     const id = req.params.id;
@@ -217,6 +218,8 @@ app.patch('/users/instructor/:id',async(req,res)=>{
     res.send(result);
 })
 
+
+
 // instructor info get
 app.get('/instructors', async(req,res)=>{
     const result = await instructorsCollection.find().toArray();
@@ -230,8 +233,11 @@ app.post('/instructor/addClass',async(req,res)=>{
     res.send(result);
 })
 
+
+
 // get add a class data for admin
 app.get('/admin/pendingClasses',async(req,res)=>{
+    
     const result = await addClassCollection.find().toArray();
     res.send(result);
 })
@@ -282,8 +288,19 @@ app.post('/create-payment-intent',verifyJWT,async(req, res)=>{
     res.send({ insertResult,deleteResult})
   })
 
-  app.get('/payment',async(req,res)=>{
+app.get('/payment',async(req,res)=>{
     const result = await paymentCollection.find().toArray();
+    res.send(result);
+})
+
+  app.get('/payments/history',async(req,res)=>{
+    const email = req.query.email;
+    console.log(email);
+    if(!email){
+        res.send([])
+    }
+    const query = {email: email};
+    const result = await paymentCollection.find(query).toArray();
     res.send(result);
     
   })
